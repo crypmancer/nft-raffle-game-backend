@@ -22,6 +22,7 @@ export const loadUser = async (req: AuthRequest, res: Response) => {
       username: user.username,
       email: user?.email,
       notifications: user?.notifications,
+      role: user?.role
     });
   } catch (err: any) {
     console.log(err.toString());

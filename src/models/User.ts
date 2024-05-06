@@ -1,6 +1,34 @@
-import mongoose from "mongoose";
+import mongoose, { Document, Model } from "mongoose";
 
-const UserSchema = new mongoose.Schema({
+// Define the interface for the user document
+interface User extends Document {
+  username: string;
+  walletAddress: string;
+  email?: string;
+  avatar?: string;
+  nonce: string;
+  isActive: boolean;
+  banExpires: string;
+  role: number;
+  mute: boolean;
+  ban: boolean;
+  notifications: {
+    marketing: boolean;
+    alert: boolean;
+    alertDetails: {
+      createdNewRisk: boolean;
+      offerReceived: boolean;
+      completedRisk: boolean;
+      createdNewOffer: boolean;
+      offerReturned: boolean;
+      expiredListing: boolean;
+    };
+  };
+  date: Date;
+}
+
+// Define the user schema
+const UserSchema = new mongoose.Schema<User>({
   username: {
     type: String,
     unique: true,
@@ -25,44 +53,55 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
-  // Unix ms timestamp when the ban will end, 0 = no ban
   banExpires: {
     type: String,
     default: "0",
   },
+  role: {
+    type: Number,
+    default: 0 // 0: user, 1: admin, 2: moderator
+  },
+  mute: {
+    type: Boolean,
+    default: false // 0: common, 1: mute, 2: ban
+  },
+  ban: {
+    type: Boolean,
+    default: false
+  },
   notifications: {
     marketing: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     alert: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     alertDetails: {
       createdNewRisk: {
         type: Boolean,
-        default: false,
+        default: true,
       },
       offerReceived: {
         type: Boolean,
-        default: false,
+        default: true,
       },
       completedRisk: {
         type: Boolean,
-        default: false,
+        default: true,
       },
       createdNewOffer: {
         type: Boolean,
-        default: false,
+        default: true,
       },
       offerReturned: {
         type: Boolean,
-        default: false,
+        default: true,
       },
       expiredListing: {
         type: Boolean,
-        default: false,
+        default: true,
       },
     },
   },
@@ -72,6 +111,7 @@ const UserSchema = new mongoose.Schema({
   },
 });
 
-const User = mongoose.model("users", UserSchema);
+// Define the user model
+const UserModal: Model<User> = mongoose.model<User>("user", UserSchema);
 
-export default User;
+export default UserModal;

@@ -1164,6 +1164,8 @@ const listen = (io: Server) => {
       // Validate user input
       if (!riskId) return socket.emit("notify-error", "Missing Risk Id");
 
+      console.log('accept risk offer => ', riskId)
+
       const topic =
         "0xa31bdc3a2ccbbdf768e8e9945f2896561b9cf226cec3ad0355bf2a73f82be968";
 
@@ -1176,6 +1178,7 @@ const listen = (io: Server) => {
         data: any;
         transactionHash: any;
       }) => {
+        console.log('doSomethingWithTxn', ' == data ==>', txn)
         const data = txn.data;
         const transactionHash = txn.transactionHash;
         const newRiskId = web3.utils.toBigInt(data.slice(0, 66)).toString();
@@ -1223,6 +1226,7 @@ const listen = (io: Server) => {
                 await Collection.findOneAndUpdate(filter, update, options);
               } catch (e) {
                 console.log(e);
+                return socket.emit("notify-error");
               }
             });
             risk.participants[risk.playerId].nftTokens.map(async (t: any[]) => {
@@ -1259,8 +1263,11 @@ const listen = (io: Server) => {
                 await Collection.findOneAndUpdate(filter, update, options);
               } catch (e) {
                 console.log(e);
+                return socket.emit("notify-error");
               }
             });
+
+            console.log('1')
 
             await Risk.findOneAndUpdate(
               { riskId },
@@ -1283,10 +1290,12 @@ const listen = (io: Server) => {
               }
             );
 
+            console.log('2')
             const users = await User.find({
               "notifications.alertDetails.completedRisk": true,
             });
 
+            console.log('3')
             // Create notifications for users with created new offer alert enabled
             const notificationsPromises = users.map(async (user) => {
               const noti = new NotificationModel({
@@ -1295,9 +1304,14 @@ const listen = (io: Server) => {
               });
               await noti.save();
             });
+            
+            console.log('4')
 
             // Wait for all notifications to be saved
             await Promise.all(notificationsPromises);
+
+            
+            console.log('5')
 
             return socket.emit("risk-completed", {
               winner: winner,
@@ -1309,6 +1323,9 @@ const listen = (io: Server) => {
           }
         }
       };
+
+      
+      console.log('6')
 
       alchemy.ws.on(hackrDaoMintEvents, doSomethingWithTxn);
     });
