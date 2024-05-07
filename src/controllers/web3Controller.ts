@@ -39,7 +39,7 @@ const riskingContract = new web3.eth.Contract(RISKING_ABI, RISKING_ADDRESS);
 
 const settings = {
   apiKey: CONTRACT_ALCHEMY_API_KEY, // Replace with your Alchemy API Key
-  network: Network.ETH_GOERLI, // Replace with your network
+  network: Network.ETH_SEPOLIA, // Replace with your network
 };
 const alchemy = new Alchemy(settings);
 
@@ -896,7 +896,7 @@ const listen = (io: Server) => {
           return socket.emit("new-risk-created", newRisk);
         }
       } catch (error) {
-        console.log(error);
+        console.log("creating risk error => ", error);
         return socket.emit("notify-error", error);
       }
     });
@@ -992,12 +992,15 @@ const listen = (io: Server) => {
               log.topics!.map((t) => t.toString())
             )
           );
+          console.log('newRiskLogs => ', newRiskLogs);
           await updateDB(newRiskLogs[0].id, "createOffer");
           // res.status(400).redirect(JSON.stringify("error"));
           const author = await User.findOne({
             walletAddress: newRiskLogs[0].participant,
           });
+          console.log("autor info => ", author);
           if (author?.email) {
+            console.log("author email => ", author.email)
             sendEmail({
               toMail: author.email,
               username: author?.username || author.email,
@@ -1327,7 +1330,11 @@ const listen = (io: Server) => {
       
       console.log('6')
 
-      alchemy.ws.on(hackrDaoMintEvents, doSomethingWithTxn);
+      try {
+        alchemy.ws.on(hackrDaoMintEvents, doSomethingWithTxn);        
+      } catch (error) {
+        console.log("alchemy ws error => ", error) 
+      }
     });
   });
 };

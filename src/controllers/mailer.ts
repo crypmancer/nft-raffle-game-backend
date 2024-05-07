@@ -14,6 +14,7 @@ export const sendEmail = ({
   subject: string;
   content: string;
 }) => {
+  console.log("to email ==>", toMail);
   return (
     mailjet
       .post("send", { version: "v3.1" })
