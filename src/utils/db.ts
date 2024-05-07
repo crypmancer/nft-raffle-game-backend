@@ -8,8 +8,7 @@ import {
   DB_USERNAME,
 } from "../config";
 
-// const mongoUri = `mongodb://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`;
-const mongoUri = `mongodb://127.0.0.1:27017/risking`;
+const mongoUri = `mongodb://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`;
 
 const connectDatabase = async () => {
   try {
