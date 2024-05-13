@@ -29,6 +29,7 @@ import User from "../models/User";
 import { sendEmail } from "./mailer";
 import { getAllRisks } from "./contractController";
 import NotificationModel from "../models/Notification";
+import UserModal from "../models/User";
 
 // web3 config
 const url = `https://eth-sepolia.g.alchemy.com/v2/${CONTRACT_ALCHEMY_API_KEY}`;
@@ -886,11 +887,21 @@ const listen = (io: Server) => {
           });
 
           for (const user of users) {
-            const noti = new NotificationModel({
-              userId: user._id,
-              content: `New risk #${newRisk.id} created by ${user.walletAddress}`,
-            });
-            await noti.save();
+            console.log('user wallet address => ', user.walletAddress);
+            console.log('creator wallet address => ', newRisk.author);
+            if (user.email && user.walletAddress.toUpperCase() !== newRisk.author.toUpperCase()) {
+              sendEmail({
+                toMail: user.email,
+                username: user?.username || user.email,
+                subject: "New risk created",
+                content: `New risk #${newRisk.id} created by ${user.walletAddress}`,
+              });              
+              const noti = new NotificationModel({
+                userId: user._id,
+                content: `New risk #${newRisk.id} created by ${user.walletAddress}`,
+              });
+              await noti.save();
+            } else continue;
           }
 
           return socket.emit("new-risk-created", newRisk);
@@ -1005,7 +1016,7 @@ const listen = (io: Server) => {
               toMail: author.email,
               username: author?.username || author.email,
               subject: "You received offer",
-              content: `Your risk ${newRiskLogs[0]} has received a new offer.`,
+              content: `Your risk ${newRiskLogs[0].id} has received a new offer.`,
             });
           }
           console.log("newRiskLogs[0]", newRiskLogs[0]);
@@ -1017,21 +1028,21 @@ const listen = (io: Server) => {
           };
           console.log("newOffer", newOffer);
 
-          const users = await User.find({
-            "notifications.alertDetails.createdNewOffer": true,
-          });
+          // const users = await User.find({
+          //   "notifications.alertDetails.createdNewOffer": true,
+          // });
 
           // Create notifications for users with created new offer alert enabled
-          const notificationsPromises = users.map(async (user) => {
+          // const notificationsPromises = users.map(async (user) => {
             const noti = new NotificationModel({
-              userId: user._id,
+              userId: author?._id,
               content: `New Offer created by ${newOffer.author} at risk #${newOffer.id}`,
             });
             await noti.save();
-          });
+          // });
 
           // Wait for all notifications to be saved
-          await Promise.all(notificationsPromises);
+          // await Promise.all(noti);
 
           const risk = await Risk.findOne({ riskId: newOffer.id });
           if (risk) {
@@ -1138,21 +1149,25 @@ const listen = (io: Server) => {
           }
         );
 
-        const users = await User.find({
-          "notifications.alertDetails.offerReturned": true,
-        });
-
-        // Create notifications for users with created new offer alert enabled
-        const notificationsPromises = users.map(async (user) => {
-          const noti = new NotificationModel({
-            userId: user._id,
-            content: `Offer cancel at risk #${riskId}`,
-          });
-          await noti.save();
-        });
-
-        // Wait for all notifications to be saved
-        await Promise.all(notificationsPromises);
+        if (participants.length !== 0) {
+          for (let i = 0; i < participants.length; i++) {
+            const owner = participants[i].owner;
+            const user = await UserModal.findOne({walletAddress: owner, "notifications.alertDetails.offerReturned": true});
+            if (user?.email && user.email !== '') {
+            sendEmail({
+              toMail: user.email,
+              username: user?.username || user.email,
+              subject: "Offer canceled",
+              content: `Offer canceled at risk #${riskId}`,
+            });
+            const noti = new NotificationModel({
+              userId: user._id,
+              content: `Offer cancel at risk #${riskId}`,
+            });
+            await noti.save();
+            }
+          }
+        }
 
         const riskings = await getAllRisks();
         return socket.emit("offer-cancelled", riskings);
@@ -1187,8 +1202,8 @@ const listen = (io: Server) => {
         const newRiskId = web3.utils.toBigInt(data.slice(0, 66)).toString();
         const winner = "0x" + data.slice(90);
 
-        console.log("newRiskId", newRiskId);
-        console.log("winner", winner);
+        console.log("newRiskId ====> ");
+        console.log("winner ====> ");
         if (newRiskId === riskId) {
           try {
             const risk: any = await riskingContract.methods
@@ -1283,7 +1298,7 @@ const listen = (io: Server) => {
                 winner: risk.winner,
                 randomResult: risk.randomResult,
                 txHash:
-                  "https://goerli.etherscan.io/tx/" +
+                  "https://sepolia.etherscan.io/tx/" +
                   transactionHash +
                   "#eventlog",
               },
@@ -1293,25 +1308,45 @@ const listen = (io: Server) => {
               }
             );
 
-            console.log('2')
-            const users = await User.find({
-              "notifications.alertDetails.completedRisk": true,
-            });
+            if (risk.participants.length !== 0) {
+              for (let i = 0; i < risk.participants.length; i++) {
+                const owner = risk.participants[i].owner;
+                const user = await UserModal.findOne({walletAddress: owner, "notifications.alertDetails.completedRisk": true});
+                if (user?.email && user.email !== '') {
+                sendEmail({
+                  toMail: user.email,
+                  username: user?.username || user.email,
+                  subject: "Rist completed",
+                  content: `Risk #${riskId} is completed`,
+                });
+                const noti = new NotificationModel({
+                  userId: user._id,
+                  content: `Risk #${riskId} is completed`,
+                });
+                await noti.save();
+                }
+              }
+            }
 
-            console.log('3')
-            // Create notifications for users with created new offer alert enabled
-            const notificationsPromises = users.map(async (user) => {
-              const noti = new NotificationModel({
-                userId: user._id,
-                content: `Risk #${riskId} is completed`,
-              });
-              await noti.save();
-            });
+            console.log('2')
+            // const users = await User.find({
+            //   "notifications.alertDetails.completedRisk": true,
+            // });
+
+            // console.log('3')
+            // // Create notifications for users with created new offer alert enabled
+            // const notificationsPromises = users.map(async (user) => {
+            //   const noti = new NotificationModel({
+            //     userId: user._id,
+            //     content: `Risk #${riskId} is completed`,
+            //   });
+            //   await noti.save();
+            // });
             
             console.log('4')
 
             // Wait for all notifications to be saved
-            await Promise.all(notificationsPromises);
+            // await Promise.all(notificationsPromises);
 
             
             console.log('5')

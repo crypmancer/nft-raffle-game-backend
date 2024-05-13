@@ -12,6 +12,8 @@ interface User extends Document {
   role: number;
   mute: boolean;
   ban: boolean;
+  verify_code: string;
+  temp_email: string;
   notifications: {
     marketing: boolean;
     alert: boolean;
@@ -68,6 +70,14 @@ const UserSchema = new mongoose.Schema<User>({
   ban: {
     type: Boolean,
     default: false
+  },
+  verify_code: {
+    type: String,
+    default: ''
+  },
+  temp_email: {
+    type: String,
+    default: ''
   },
   notifications: {
     marketing: {

@@ -8,11 +8,13 @@ export const sendEmail = ({
   username,
   subject,
   content,
+  register
 }: {
   toMail: string;
   username: string;
   subject: string;
   content: string;
+  register?: boolean;
 }) => {
   console.log("to email ==>", toMail);
   return (
@@ -22,8 +24,8 @@ export const sendEmail = ({
         Messages: [
           {
             From: {
-              Email: "harran39318@gmail.com",
-              Name: "harry",
+              Email: "founder@risking.io",
+              Name: "Risking.io",
             },
             To: [
               {
@@ -35,9 +37,10 @@ export const sendEmail = ({
             HTMLPart: `<div>
                         <p>Hi ${username}!</p> 
                         <p>${content}</p>
+                        ${!register ? `<p><a href='http://localhost:8000/api/user/unsubscribe/${toMail}'>Unsubscribe</a></p>`:''}
                         </div>
                       `,
-            CustomID: "AppGettingStartedTest",
+            CustomID: "AppGettingStartedTest"
           },
         ],
       })

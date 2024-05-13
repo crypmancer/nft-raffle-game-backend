@@ -11,6 +11,8 @@ import {
   sendEmail,
   updateAvatarByNft,
   updateNotification,
+  emailVerify,
+  unsubscribe
 } from "../controllers";
 import { authMiddleware } from "../middlewares";
 
@@ -25,6 +27,8 @@ router.post("/avatar", authMiddleware, updateAvatar);
 router.post("/nft-avatar", authMiddleware, updateAvatarByNft);
 router.post("/nft-avatar", authMiddleware, updateAvatarByNft);
 router.post("/notification", authMiddleware, updateNotification);
+router.post('/emailVerify', authMiddleware, emailVerify)
+router.get('/unsubscribe/:email', unsubscribe)
 
 router.post("/contact", async (req, res) => {
   const { name, email, summary } = req.body;
